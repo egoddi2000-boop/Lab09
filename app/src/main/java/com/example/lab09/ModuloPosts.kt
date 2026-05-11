@@ -16,10 +16,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
@@ -29,23 +29,40 @@ import androidx.navigation.NavHostController
 
 @Composable
 fun ScreenPosts(navController: NavHostController, servicio: PostApiService) {
-
     val listaPosts: SnapshotStateList<PostModel> = remember {
         mutableStateListOf()
     }
 
+    var mensajeError by remember {
+        mutableStateOf<String?>(null)
+    }
+
     LaunchedEffect(Unit) {
-        val listado = servicio.getUserPosts()
-        listaPosts.clear()
-        listado.forEach {
-            listaPosts.add(it)
+        try {
+            val listado = servicio.getUserPosts()
+            listaPosts.clear()
+
+            listado.forEach {
+                listaPosts.add(it)
+            }
+
+            mensajeError = null
+        } catch (e: Exception) {
+            Log.e("POSTS", "Error cargando posts", e)
+            mensajeError = "No se pudieron cargar los posts."
         }
+    }
+
+    if (mensajeError != null) {
+        Text(
+            text = mensajeError!!,
+            modifier = Modifier.padding(12.dp)
+        )
     }
 
     LazyColumn {
         items(listaPosts) { item ->
             Row(modifier = Modifier.padding(8.dp)) {
-
                 Text(
                     text = item.id.toString(),
                     modifier = Modifier.weight(0.1f),
@@ -86,9 +103,13 @@ fun ScreenPost(
         mutableStateOf<PostModel?>(null)
     }
 
-    LaunchedEffect(Unit) {
-        val xpost = servicio.getUserPostById(id)
-        post = xpost
+    LaunchedEffect(id) {
+        try {
+            val xpost = servicio.getUserPostById(id)
+            post = xpost
+        } catch (e: Exception) {
+            Log.e("POSTS", "Error cargando post $id", e)
+        }
     }
 
     Column(
@@ -97,7 +118,6 @@ fun ScreenPost(
             .fillMaxSize()
     ) {
         if (post != null) {
-
             OutlinedTextField(
                 value = post!!.id.toString(),
                 onValueChange = {},
@@ -115,7 +135,7 @@ fun ScreenPost(
             OutlinedTextField(
                 value = post!!.title,
                 onValueChange = {},
-                label = { Text("Título") },
+                label = { Text("Titulo") },
                 readOnly = true
             )
 
